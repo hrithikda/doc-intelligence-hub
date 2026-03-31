@@ -50,6 +50,11 @@ async def upload_document(file: UploadFile = File(...), db: AsyncSession = Depen
     document_id = doc_record.id
 
     chunks = parse_document(save_path, document_id, file.filename)
+
+    if not chunks:
+        doc_record.status = "error"
+        raise HTTPException(status_code=422, detail="No text could be extracted from this file. It may be a scanned image PDF.")
+
     ids, embeddings, texts, metadatas = await embed_chunks(chunks)
     await upsert_chunks(ids, embeddings, texts, metadatas)
     doc_record.chunk_count = len(chunks)
