@@ -1,44 +1,54 @@
-# AI-Powered Document Intelligence Hub
+# DocIntel — AI-Powered Document Intelligence Hub
 
-A fully local, privacy-first document intelligence application. Upload business documents (PDFs, contracts, reports) and interact with them through natural language Q&A, structured summaries, entity extraction, and side-by-side document comparison.
+> Upload any business document. Ask questions. Get cited answers. All running locally on your machine.
 
-**Zero external API calls. All processing runs on your machine.**
+![DocIntel Demo](assets/demo.gif)
 
-## Features
+---
 
-- **PDF/DOCX/TXT Upload** — drag and drop document ingestion with automatic chunking
-- **RAG Q&A** — ask natural language questions, get cited answers grounded in source chunks
-- **Hybrid Retrieval** — dense vector search (ChromaDB) + BM25 keyword search fused with Reciprocal Rank Fusion
-- **Entity Extraction** — spaCy NER + LLM fallback for contract-specific entities (parties, dates, clauses, monetary values)
-- **Structured Summary** — LLM-generated purpose, parties, key dates, obligations, and risks
-- **Document Comparison** — side-by-side diff table across two documents with verdict badges
+## What it does
+
+DocIntel lets you upload PDFs, contracts, and reports and interact with them through four features:
+
+- **Q&A** — ask natural language questions, get answers grounded in the document with page-level citations
+- **Summary** — automatically extracts purpose, parties, key dates, obligations, and risks into a structured card view
+- **Entity Extraction** — pulls out people, organizations, dates, monetary values, and contract clauses as tagged pills
+- **Comparison** — side-by-side diff table between two documents with similarity verdicts
+
+**Zero external API calls. Everything runs locally via Ollama.**
+
+---
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| LLM | Ollama (Llama 3.1 8B) |
+| LLM | Llama 3.1 8B via Ollama |
 | Embeddings | nomic-embed-text via Ollama |
 | Vector Store | ChromaDB |
-| Retrieval | Hybrid dense + BM25 with RRF |
-| Backend | FastAPI, SQLAlchemy, PostgreSQL |
-| Frontend | React, Vite, Zustand, Axios |
-| Parsing | PyMuPDF, python-docx |
+| Retrieval | Hybrid dense + BM25 with Reciprocal Rank Fusion |
+| Backend | FastAPI + SQLAlchemy + PostgreSQL |
+| Frontend | React + Vite + Zustand |
+| Parsing | PyMuPDF + python-docx |
 | NER | spaCy + LLM fallback |
+
+---
 
 ## Architecture
 ```
-React Frontend (Vite)
+React (Vite)
     ↓
-FastAPI Backend
+FastAPI
     ├── Document Parser (PyMuPDF / python-docx)
-    ├── Embedding Engine (nomic-embed-text via Ollama)
-    ├── Hybrid Retriever (ChromaDB dense + BM25 + RRF)
+    ├── Embedder (nomic-embed-text via Ollama)
+    ├── Hybrid Retriever (ChromaDB + BM25 + RRF)
     ├── LLM (Llama 3.1 8B via Ollama)
     └── Entity Extractor (spaCy + LLM)
-        ↓
-PostgreSQL (metadata) + ChromaDB (vectors)
+         ↓
+PostgreSQL (metadata + sessions) + ChromaDB (vectors)
 ```
+
+---
 
 ## Setup
 
@@ -48,13 +58,13 @@ PostgreSQL (metadata) + ChromaDB (vectors)
 - Docker
 - Ollama
 
-### 1. Install Ollama and pull models
+### 1. Pull models
 ```bash
 ollama pull llama3.1:8b
 ollama pull nomic-embed-text
 ```
 
-### 2. Start Docker services
+### 2. Start infrastructure
 ```bash
 docker compose up -d
 ```
@@ -78,7 +88,9 @@ npm run dev
 
 Open `http://localhost:5173`
 
-## API Endpoints
+---
+
+## API Reference
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -89,3 +101,9 @@ Open `http://localhost:5173`
 | GET | `/analysis/summary/{id}` | Get structured summary |
 | GET | `/analysis/entities/{id}` | Get extracted entities |
 | POST | `/compare/` | Compare two documents |
+
+---
+
+## Why hybrid retrieval
+
+Most RAG tutorials use pure vector search. This project uses **Reciprocal Rank Fusion** to combine dense vector search (ChromaDB cosine similarity) with BM25 keyword search. The fused ranking consistently outperforms either method alone, especially on short documents and contract-specific terminology — exactly the kind of content this app is built for.
